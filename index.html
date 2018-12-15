@@ -7,12 +7,9 @@
         <meta charset="UTF-8" />
         <title>Phaser Example Runner</title>
         <meta name="viewport" content="initial-scale=1 maximum-scale=1 user-scalable=0 minimal-ui" />
-        <script src="_site/js/jquery-2.0.3.min.js" type="text/javascript"></script>
-        <script src="_site/phaser/phaser.2.6.2.min.js" type="text/javascript"></script>
-        <script src="_site/phaser/blob.js" type="text/javascript"></script>
-        <script src="_site/phaser/canvas-to-blob.js" type="text/javascript"></script>
-        <script src="_site/phaser/filesaver.js" type="text/javascript"></script>
-        <script src="_site/phaser/embed.js" type="text/javascript"></script>
+
+        <script src="phaser.2.6.2.min.js" type="text/javascript"></script>
+        
         <style>
             body {
                 margin: 0px;
@@ -34,167 +31,190 @@
 
   var game = new Phaser.Game(8000, 6000, Phaser.CANVAS, 'phaser-example', { preload: preload, create: create, update: update, render: render });
 
+
+var data = [];
+var polyline = [];
+var tracing = false;
+var current;
+var dropZone;
+var bmd;
+
 function preload() {
 
     game.load.image('backdrop', 'a1.jpg');
-    game.load.image('card', 'mana_card.png');
+    game.load.image('card', 'p2.png');
 
 }
 
-var card;
-var cursors;
-
 function create() {
 
-    game.forceSingleUpdate = true;
-
-    game.world.setBounds(0, 0, 1920, 1200);
-//game.canvas.width=6009;game.canvas.height=2000;
+    game.stage.backgroundColor = 0x000000;
     game.add.sprite(0, 0, 'backdrop');
-console.log(game.canvas);
-    card = game.add.sprite(game.world.centerX, game.world.centerY, 'card');
-    card.anchor.set(0.5);
-
-    game.physics.enable(card, Phaser.Physics.ARCADE);
-    card.body.collideWorldBounds = true;
-
-    game.camera.follow(card);
-
-    cursors = game.input.keyboard.createCursorKeys();
-
-
-
-
- graphics = game.add.graphics(300, 200);
-
-    drawShape(0x027a71, 0x02fdeb);
-
-    graphics.inputEnabled = true;
-    graphics.input.useHandCursor = true;
-
-    graphics.events.onInputDown.add(onDown, this);
-    graphics.events.onInputUp.add(onUp, this);
-    graphics.events.onInputOver.add(onOver, this);
-    graphics.events.onInputOut.add(onOut, this);
-
-
-game.stage.backgroundColor = '#2d2d2d';
-
-    bmd = game.make.bitmapData(game.world.centerX*10, game.world.centerY*10);
-    bmd.copy('pic');
+    //  When the current line is done it'll get rendered to this bmd
+    bmd = game.make.bitmapData(8000, 6000);
     bmd.addToWorld();
 
-    bmd2 = game.make.bitmapData(64, 64);
-    bmd2.circle(32, 32, 32, 'rgba(255,0,255,0.2)');
+    keys = game.input.keyboard.addKeys(
+        {
+            'close': Phaser.Keyboard.SPACEBAR,
+            'save': Phaser.Keyboard.S
+        }
+    );
 
-    game.input.addMoveCallback(paint, this);
+    keys.close.onDown.add(closeLine, this);
+    keys.save.onDown.add(save, this);
+
+    game.input.onDown.add(onDown, this);
+    game.input.onUp.add(onUp, this);
+    game.input.addMoveCallback(trace, this);
 
 
 
+
+
+
+
+}
+
+function save() {
+
+    console.clear();
+
+    var s = 'var data = [\n';
+
+    for (var i = 0; i < polyline.length; i++)
+    {
+        s += '\t[ ' + polyline[i].start.x + ', ' + polyline[i].start.y + ', ' + polyline[i].end.x + ', ' + polyline[i].end.y + ' ]';
+
+        if (i === polyline.length - 1)
+        {
+            s += '\n';
+        }
+        else
+        {
+            s += ',\n';
+        }
+    }
+
+    s += '];';
+    
+    console.log(s);
+
+}
+
+function closeLine() {
+
+    if (current)
+    {
+        current = null;
+        tracing = false;
+    }
+
+}
+
+function onDown(pointer) {
+
+    if (tracing)
+    {
+        //  End line
+        var x = current.end.x;
+        var y = current.end.y;
+
+        polyline.push(current.clone());
+
+        bmd.line(current.start.x, current.start.y, current.end.x, current.end.y, '#00ff00');
+
+        //  If it closes the line then quit
+        if (x === dropZone.x && y === dropZone.y)
+        {
+            data.push(polyline.slice(0));
+            polyline = [];
+            current = null;
+            tracing = false;
+            redraw();
+        }
+        else
+        {
+            current = new Phaser.Line(x, y, pointer.x, pointer.y);
+        }
+    }
+    else
+    {
+        current = new Phaser.Line(pointer.x, pointer.y, pointer.x, pointer.y);
+        dropZone = new Phaser.Circle(pointer.x, pointer.y, 16);
+        tracing = true;
+    }
+
+}
+
+function redraw() {
+
+    // console.log(data);
+
+    bmd.cls();
+    bmd.ctx.fillStyle = '#00aa00';
+
+    for (var i = 0; i < data.length; i++)
+    {
+        var path = data[i];
+
+        bmd.ctx.beginPath();
+
+        bmd.ctx.moveTo(path[0].start.x, path[0].start.y);
+
+        for (var n = 0; n < path.length; n++)
+        {
+            bmd.ctx.lineTo(path[n].end.x, path[n].end.y);
+        }
+
+        bmd.ctx.closePath();
+
+        bmd.ctx.fill();
+    }
+
+}
+
+function onUp(pointer) {
+
+
+    
+}
+
+function trace(pointer) {
+
+    if (current)
+    {
+        if (dropZone.contains(pointer.x, pointer.y) && polyline.length > 1)
+        {
+            current.end.setTo(dropZone.x, dropZone.y);
+        }
+        else
+        {
+            current.end.setTo(pointer.x, pointer.y);
+        }
+    }
 
 }
 
 function update() {
 
-    card.body.velocity.x = 0;
-    card.body.velocity.y = 0;
-
-    if (cursors.left.isDown)
-    {
-        // card.x -= 4;
-        card.body.velocity.x = -240;
-    }
-    else if (cursors.right.isDown)
-    {
-        // card.x += 4;
-        card.body.velocity.x = 240;
-    }
-
-    if (cursors.up.isDown)
-    {
-        // card.y -= 4;
-        card.body.velocity.y = -240;
-    }
-    else if (cursors.down.isDown)
-    {
-        // card.y += 4;
-        card.body.velocity.y = 240;
-    }
-
 }
 
 function render() {
 
-    game.debug.cameraInfo(game.camera, 500, 32);
-    game.debug.spriteCoords(card, 32, 32);
-
-    game.debug.rectangle({x:400+game.camera.x,y:0+game.camera.y,width:1,height:600});
-    game.debug.rectangle({x:0+game.camera.x,y:300+game.camera.y,width:800,height:1});
-
-}
-    
-
-
-var pa=game.world.centerX;
-function drawShape(fill, style) {
-
-    graphics.clear();
-
-    graphics.beginFill(fill);
-    graphics.lineStyle(4, style, 1);
-
-    graphics.moveTo(0+pa, 0+pa);
-    graphics.lineTo(250+pa, 0+pa);
-    graphics.lineTo(250+pa, 200+pa);
-   
-    graphics.lineTo(0+pa, 0+pa);
-
-    graphics.endFill();
-
-}
-
-function onOver() {
-
-    drawShape(0xab3602, 0xeb6702);
-
-}
-
-function onDown() {
-
-    drawShape(0x717a02, 0xebfd02);
-
-}
-
-function onUp() {
-
-    drawShape(0x027a71, 0x02fdeb);
-
-}
-
-function onOut() {
-
-    drawShape(0x027a71, 0x02fdeb);
-
-}
-
-
-
-
-
-
-
-
-function paint(pointer, x, y) {
-
-    if (pointer.isDown)
+    if (current)
     {
-        bmd.draw(bmd2, x - 16, y - 16);
+        if (dropZone.contains(current.end.x, current.end.y))
+        {
+            game.debug.geom(current, '#ffff00');
+        }
+        else
+        {
+            game.debug.geom(current, '#00ff00');
+        }
     }
 
 }
-
-
-
 
 
         </script>
