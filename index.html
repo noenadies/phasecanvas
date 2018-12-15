@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+    
+<!-- Mirrored from examples.phaser.io/embed.php?f=geometry/polygon+contains.js by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 15 Dec 2018 16:43:56 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=UTF-8" /><!-- /Added by HTTrack -->
+<head>
+        <meta charset="UTF-8" />
+        <title>Phaser Example Runner</title>
+        <meta name="viewport" content="initial-scale=1 maximum-scale=1 user-scalable=0 minimal-ui" />
+        <script src="_site/js/jquery-2.0.3.min.js" type="text/javascript"></script>
+        <script src="_site/phaser/phaser.2.6.2.min.js" type="text/javascript"></script>
+        <script src="_site/phaser/blob.js" type="text/javascript"></script>
+        <script src="_site/phaser/canvas-to-blob.js" type="text/javascript"></script>
+        <script src="_site/phaser/filesaver.js" type="text/javascript"></script>
+        <script src="_site/phaser/embed.js" type="text/javascript"></script>
+        <style>
+            body {
+                margin: 0px;
+                padding: 0px;
+                font-family: Arial;
+                font-size: 14px;
+                background-color: #000000;
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="phaser-example"></div>
+
+        <script type="text/javascript">
+
+        var IDE_HOOK = false;
+        var VERSION = '2.6.2';
+
+  var game = new Phaser.Game(8000, 6000, Phaser.CANVAS, 'phaser-example', { preload: preload, create: create, update: update, render: render });
+
+function preload() {
+
+    game.load.image('backdrop', 'a1.jpg');
+    game.load.image('card', 'mana_card.png');
+
+}
+
+var card;
+var cursors;
+
+function create() {
+
+    game.forceSingleUpdate = true;
+
+    game.world.setBounds(0, 0, 1920, 1200);
+//game.canvas.width=6009;game.canvas.height=2000;
+    game.add.sprite(0, 0, 'backdrop');
+console.log(game.canvas);
+    card = game.add.sprite(game.world.centerX, game.world.centerY, 'card');
+    card.anchor.set(0.5);
+
+    game.physics.enable(card, Phaser.Physics.ARCADE);
+    card.body.collideWorldBounds = true;
+
+    game.camera.follow(card);
+
+    cursors = game.input.keyboard.createCursorKeys();
+
+
+
+
+ graphics = game.add.graphics(300, 200);
+
+    drawShape(0x027a71, 0x02fdeb);
+
+    graphics.inputEnabled = true;
+    graphics.input.useHandCursor = true;
+
+    graphics.events.onInputDown.add(onDown, this);
+    graphics.events.onInputUp.add(onUp, this);
+    graphics.events.onInputOver.add(onOver, this);
+    graphics.events.onInputOut.add(onOut, this);
+
+
+game.stage.backgroundColor = '#2d2d2d';
+
+    bmd = game.make.bitmapData(game.world.centerX*10, game.world.centerY*10);
+    bmd.copy('pic');
+    bmd.addToWorld();
+
+    bmd2 = game.make.bitmapData(64, 64);
+    bmd2.circle(32, 32, 32, 'rgba(255,0,255,0.2)');
+
+    game.input.addMoveCallback(paint, this);
+
+
+
+
+}
+
+function update() {
+
+    card.body.velocity.x = 0;
+    card.body.velocity.y = 0;
+
+    if (cursors.left.isDown)
+    {
+        // card.x -= 4;
+        card.body.velocity.x = -240;
+    }
+    else if (cursors.right.isDown)
+    {
+        // card.x += 4;
+        card.body.velocity.x = 240;
+    }
+
+    if (cursors.up.isDown)
+    {
+        // card.y -= 4;
+        card.body.velocity.y = -240;
+    }
+    else if (cursors.down.isDown)
+    {
+        // card.y += 4;
+        card.body.velocity.y = 240;
+    }
+
+}
+
+function render() {
+
+    game.debug.cameraInfo(game.camera, 500, 32);
+    game.debug.spriteCoords(card, 32, 32);
+
+    game.debug.rectangle({x:400+game.camera.x,y:0+game.camera.y,width:1,height:600});
+    game.debug.rectangle({x:0+game.camera.x,y:300+game.camera.y,width:800,height:1});
+
+}
+    
+
+
+var pa=game.world.centerX;
+function drawShape(fill, style) {
+
+    graphics.clear();
+
+    graphics.beginFill(fill);
+    graphics.lineStyle(4, style, 1);
+
+    graphics.moveTo(0+pa, 0+pa);
+    graphics.lineTo(250+pa, 0+pa);
+    graphics.lineTo(250+pa, 200+pa);
+   
+    graphics.lineTo(0+pa, 0+pa);
+
+    graphics.endFill();
+
+}
+
+function onOver() {
+
+    drawShape(0xab3602, 0xeb6702);
+
+}
+
+function onDown() {
+
+    drawShape(0x717a02, 0xebfd02);
+
+}
+
+function onUp() {
+
+    drawShape(0x027a71, 0x02fdeb);
+
+}
+
+function onOut() {
+
+    drawShape(0x027a71, 0x02fdeb);
+
+}
+
+
+
+
+
+
+
+
+function paint(pointer, x, y) {
+
+    if (pointer.isDown)
+    {
+        bmd.draw(bmd2, x - 16, y - 16);
+    }
+
+}
+
+
+
+
+
+        </script>
+
+    </body>
+
+<!-- Mirrored from examples.phaser.io/embed.php?f=geometry/polygon+contains.js by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 15 Dec 2018 16:44:00 GMT -->
+</html>
